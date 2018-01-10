@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <meta charset="UTF-8">
+  <title></title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      width: 800px;
+      height: 600px;
+      background-color: #ccc;
+      position: relative;
+    }
+    #map div {
+      position: absolute;
+    }
+    p {
+      font: 200px/600px '黑体';
+      text-align: center;
+      color: red;
+    }
+    p.active {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="map"><p>贪吃蛇</p></div>
+<button id="btn">开始游戏</button>
+<button id="stop">暂停</button>
+<script>
+  //思路：
+  // 背景 食物 蛇  游戏控制
+  //1 背景
+  
+  //2 食物
+  (function(){
+    function Food(options){
+      //属性设置：
+      this.width = options.width||20;
+      this.height = options.height||20;
+      this.bgColor = options.bgColor||'green';
+      this.x = 0;
+      this.y = 0;
+      this.map = options.map;
+      this.element;
+    }
+    //方法设置：(默认）
+    Food.prototype.init = function(){
+      //检查界面是否有食物
+      if(this.element){
+        this.map.removeChild(this.element);
+      }
+      //创建食物
+      var div = document.createElement('div');
+      this.element = div;
+      //设置食物样式
+      div.style.width = this.width + 'px';
+      div.style.height = this.height + 'px';
+      div.style.backgroundColor = this.bgColor;
+      //设置食物随机位置
+      var widthMax = Math.floor(this.map.offsetWidth/this.width);
+      var heightMax = Math.floor(this.map.offsetHeight/this.height);
+      this.x = Math.floor(Math.random()*widthMax);
+      this.y = Math.floor(Math.random()*heightMax);
+      //window.x1 = this.x;
+      //window.y1 = this.y;
+      div.style.left = this.x *this.width + 'px';
+      div.style.top = this.y *this.height + 'px';
+      //console.log(widthMax);
+      //console.log(Math.ceil(Math.random()*widthMax));
+      //添加到游戏界面
+      var map = document.getElementById('map');
+      map.appendChild(div);
+      //window.div = div;
+    };
+    window.Food = Food;
+//    //----------检测-----------
+//    var f1 = new Food({map:document.getElementById('map')});
+//    f1.init();
+//    f1.init();
+  }());
+  //3 蛇
+  (function(){
+    //设置属性：
+    function Snake(options){
+      this.width = options.width||20;
+      this.height = options.height||20;
+      this.body = [
+        {x:1,y:1,bgColor:'yellow'},
+        {x:2,y:1,bgColor:'yellow'},
+        {x:3,y:1,bgColor:'red'}
+      ];
+      //window.snakeBody = this.body;
+      this.map = options.map;
+      this.elements = [];
+      this.direction = 'right';
+    }
+    //设置方法：
+    Snake.prototype.init = function(){
+      //检查界面是否有需要清除的蛇
+      for(var i = this.elements.length-1;i>=0;i--){
+        this.map.removeChild(this.elements[i]);
+      }
+      this.elements = [];
+      //创建初始蛇
+      for(var i = 0;i<this.body.length;i++){
+        var div = document.createElement('div');
+        div.style.width = this.width + 'px';
+        div.style.height = this.height + 'px';
+        div.style.backgroundColor = this.body[i].bgColor;
+        //位置计算
+        div.style.left = this.body[i].x * this.width + 'px';
+        div.style.top = this.body[i].y * this.width + 'px';
+        var map = document.getElementById('map');
+        map.appendChild(div);
+        this.elements.push(div);
+        //console.log(this.elements);
+      }
+    };
+    Snake.prototype.move = function(){
+      //this.body = snakeBody;
+      //console.log('move'+this.body.length);
+      for(var i = 0;i<this.body.length-1;i++){
+        this.body[i].x = this.body[i+1].x;
+        this.body[i].y = this.body[i+1].y;
+        //this.body[i].bgColor = 'yellow';
+      }
+      //console.log('move'+this.body[0].x+ ' '+this.body[1].x);
+      switch(this.direction){
+        case 'left':
+          this.body[this.body.length-1].x--;
+          break;
+        case 'up':
+          this.body[this.body.length-1].y--;
+          break;
+        case 'right':
+          this.body[this.body.length-1].x++;
+          break;
+        case 'down':
+          this.body[this.body.length-1].y++;
+          break;
+      }
+      //this.init();
+    };
+    window.Snake = Snake;
+    //----------检测----------
+//    var S1 = new Snake({map:document.getElementById('map')});
+//    S1.init();
+//    S1.move();
+  }());
+  //4 设置游戏
+  (function(){
+    //设置属性
+    function Game(options){
+      this.food = options.food;
+      this.snake = options.snake;
+      this.map = options.map;
+    }
+    //设置方法
+    //初始化
+    Game.prototype.init = function(){
+      this.food.init();
+      this.snake.init();
+      this.snake.move();
+      this.playing();
+      this.direction();
+      //this.eatFood();
+    };
+    Game.prototype.playing = function(){
+      var that = this;
+      var num = setInterval(function(){
+        that.snake.move();
+        var x = that.snake.body[that.snake.body.length-1].x;
+        var y = that.snake.body[that.snake.body.length-1].y;
+        var x1 = that.food.x;
+        var y1 = that.food.y;
+        var snakeTail = that.snake.body[0];
+        //console.log('food:'+ '' + x1 + y1,'snake'+x,y);
+        if(x == x1 && y == y1){
+          that.snake.body.unshift({x:snakeTail.x,y:snakeTail.y,bgColor:'yellow'});
+          //window.snakeBody.splice(window.snakeBody.length-2,0,window.div);
+          //window.div.style.backgroundColor = 'yellow';
+          that.food.init();
+          //console.log(that.food.x,that.food.y);
+        }
+        if(x<0||x>39||y<0||y>29){
+          clearInterval(num);
+          alert('游戏结束');
+          return;
+        }
+        //2撞到自己的身体死
+        //通过观察我们发现 snakeBody后四个是不会被蛇头碰到的
+        if(that.snake.body.length>4){
+          for(var i = that.snake.body.length-5;i>=0;i--){
+            if(x==that.snake.body[i].x && y==that.snake.body[i].y){
+              alert('游戏结束');
+              clearInterval(num);
+              return;
+            }
+          }
+        }
+        //因为结束后会超出边界 所以先检测后绘制
+        window.num = num;
+        that.snake.init()
+      },200);
+    }
+    Game.prototype.direction = function(){
+      var that = this;
+      document.onkeydown = function(e){
+        var e = window.event||e;
+        //限制反向
+        switch(true){
+          case e.keyCode ==37 && that.snake.direction !== 'right':
+            that.snake.direction = 'left';
+            break;
+          case e.keyCode ==39 && that.snake.direction !== 'left':
+            that.snake.direction = 'right';
+            break;
+          case e.keyCode ==38 && that.snake.direction !== 'down':
+            that.snake.direction = 'up';
+            break;
+          case e.keyCode ==40 && that.snake.direction !== 'up':
+            that.snake.direction = 'down';
+            break;
+        }
+      };
+    };
+//    Game.prototype.eatFood = function(){
+//      this.food.init();
+//    };
+    window.Game = Game;
+  }());
+  //创建实例
+  var currentMap = document.getElementById('map');
+  var game = new Game({
+    food: new Food({map:currentMap}),
+    snake: new Snake({map:currentMap}),
+    map: currentMap
+  });
+  var btn = document.getElementById('btn');
+  var p = document.getElementsByTagName('p')[0];
+  var stop = document.getElementById('stop');
+  var flag = true;
+  btn.onclick = function(){
+    if(flag){
+      p.className = 'active';
+      btn.innerText = '重新开始';
+      game.init();
+      flag = false;
+      console.log(flag);
+      //currentMap.innerText = '';
+      //btn.innerText = '重新开始';
+    }else {
+      location.reload();
+      flag = true;
+    }
+  };
+  stop.onclick = function(){
+    if(flag==false){
+      clearInterval(num);
+      flag = true;
+    }
+  };
+
+
+
+</script>
+</body>
+</html>
